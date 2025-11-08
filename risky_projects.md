@@ -1,4 +1,6 @@
-# PostgreSQL Solution
+# Risky Projects
+
+## PostgreSQL Solution
 ```{sql}
 select
     proj.title
@@ -18,7 +20,7 @@ order by proj.title asc;
 ```
 
 
-# PySpark Solution
+## PySpark Solution
 
 ```{python}
 import pyspark.sql.functions as F
@@ -39,4 +41,21 @@ project_emplotyee_details = (linkedin_projects
     .orderBy("title", ascending=True)
     .toPandas()
 )
+```
+
+## R Solution
+
+```{r}
+library(dplyr)
+
+linkedin_projects |>
+  inner_join(linkedin_emp_projects, by = c("id" = "project_id")) |>
+  inner_join(linkedin_employees, by = c("emp_id" = "id")) |>
+  mutate(project_duration_days = difftime(end_date, start_date, units = "days")) |>
+  mutate(daily_salary = salary/365) |>
+  mutate(prorated_employee_costs = daily_salary * project_duration_days) |>
+  group_by(title, budget) |>
+  summarize(prorated_expense = ceiling(sum(prorated_employee_costs))) |>
+  filter(prorated_expense > budget) |>
+  arrange(title)
 ```
