@@ -1,3 +1,23 @@
+# PostgreSQL Solution
+```{sql}
+select
+    proj.title
+  , proj.budget
+  , ceiling(sum(emp.salary * ((proj.end_date - proj.start_date)*1.0 / 365))) as prorated_employee_expense
+from linkedin_projects as proj
+inner join linkedin_emp_projects as lookup
+  on proj.id = lookup.project_id
+inner join linkedin_employees as emp
+  on emp.id = lookup.emp_id
+group by
+    proj.title
+  , proj.budget
+having
+    proj.budget < ceiling(sum(emp.salary * ((proj.end_date - proj.start_date)*1.0 / 365)))
+order by proj.title asc;
+```
+
+
 # PySpark Solution
 
 ```{python}
