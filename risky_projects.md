@@ -18,6 +18,25 @@ having
     proj.budget < ceiling(sum(emp.salary * ((proj.end_date - proj.start_date)*1.0 / 365)))
 order by proj.title asc;
 ```
+## Python-Pandas Solution
+```{python}
+import pandas as pd
+import numpy as np
+
+(linkedin_projects
+    .merge(linkedin_emp_projects, left_on="id", right_on="project_id", how="inner")
+    .merge(linkedin_employees, left_on="emp_id", right_on="id", how="inner", suffixes=('', '_emp'))
+    .assign(project_duration_days=lambda df: (df['end_date'] - df['start_date']).dt.days)
+    .assign(daily_salary=lambda df: df['salary'] / 365)
+    .assign(prorated_employee_costs=lambda df: df['daily_salary'] * df['project_duration_days'])
+    .groupby(['title', 'budget'], as_index=False)
+    .agg(prorated_expense=('prorated_employee_costs', lambda x: np.ceil(x.sum())))
+    .query('prorated_expense > budget')
+    .sort_values('title')
+    .reset_index(drop=True)
+)
+```
+
 
 ## Python-Polars Solution
 ```{python}
