@@ -19,13 +19,32 @@ having
 order by proj.title asc;
 ```
 
+## Python-Polars Solution
+```{python}
+import polars as pl
+import pandas as pd
 
-## PySpark Solution
+(linkedin_projects
+    .join(linkedin_emp_projects, left_on="id", right_on="project_id", how="inner")
+    .join(linkedin_employees, left_on="emp_id", right_on="id", how="inner")
+    .with_columns( (pl.col("end_date") - pl.col("start_date")).dt.total_days().alias("project_duration_days") )
+    .with_columns( (pl.col("salary") / 365).alias("daily_salary") )
+    .with_columns( (pl.col("salary") / 365 * (pl.col("end_date") - pl.col("start_date")).dt.total_days()).alias("prorated_employee_costs") )
+    .group_by(["title", "budget"])
+    .agg(pl.col("prorated_employee_costs").sum().ceil().alias("prorated_expense"))
+    .filter(pl.col("prorated_expense") > pl.col("budget"))
+    .sort("title", descending=False)
+    .collect()
+    .to_pandas()
+)
+```
+
+## pySpark Solution
 
 ```{python}
 import pyspark.sql.functions as F
 
-project_emplotyee_details = (linkedin_projects
+(linkedin_projects
     .join(linkedin_emp_projects, 
           on=linkedin_projects["id"] == linkedin_emp_projects["project_id"],
           how="inner")
